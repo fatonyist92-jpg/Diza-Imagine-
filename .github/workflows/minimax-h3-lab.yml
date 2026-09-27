@@ -1,0 +1,47 @@
+name: MiniMax H3 10s Lab
+on:
+  push:
+    branches: [minimax-h3-lab]
+  workflow_dispatch:
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q gradio_client requests
+      - name: Generate 10s I2V
+        run: |
+          python - <<'PY'
+          import requests, shutil, os
+          from gradio_client import Client, handle_file
+          img='first.png'
+          u='https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png'
+          r=requests.get(u,timeout=60); r.raise_for_status(); open(img,'wb').write(r.content)
+          c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
+          res=c.predict(
+              prompt="The fox looks around, then trots deeper into the forest",
+              image_path=handle_file(img),
+              last_image_path=None,
+              canvas="960x544 · 16:9 fast",
+              duration=10,
+              steps=4,
+              seed=42,
+              upsample=False,
+              api_name="/generate"
+          )
+          print("RESULT",res)
+          p=res[0] if isinstance(res,(list,tuple)) else res
+          if isinstance(p,dict): p=p.get('path') or p.get('video') or p.get('url')
+          if not p or not os.path.exists(p): raise RuntimeError(f"No local MP4: {p}")
+          shutil.copyfile(p,'minimax-h3-10s.mp4')
+          print("MP4_BYTES",os.path.getsize('minimax-h3-10s.mp4'))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minimax-h3-10s-mp4
+          path: minimax-h3-10s.mp4
+          if-no-files-found: error
