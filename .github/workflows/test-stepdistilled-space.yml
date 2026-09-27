@@ -1,0 +1,24 @@
+name: Test step distilled 7s
+on:
+  push:
+    paths:
+      - ".github/workflows/test-stepdistilled-space.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - run: pip install -q gradio_client imageio-ffmpeg
+      - name: Generate
+        run: |
+          python - <<'PY'
+          from gradio_client import Client, handle_file
+          import imageio_ffmpeg, os
+          c=Client("Guns6996/Guns_AI_Studio", verbose=True)
+          img="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/guitar-man.png"
+          print("SUBMIT")
+          r=c.predict(handle_file(img),"The man gently strums the red electric guitar while slightly moving his head, fixed camera, natural realistic motion.",api_name="/image_to_video")
+          print("RESULT",r)
+          n,secs=imageio_ffmpeg.count_frames_and_secs(r)
+          print("VERIFY",n,secs,os.path.getsize(r))
+          PY
