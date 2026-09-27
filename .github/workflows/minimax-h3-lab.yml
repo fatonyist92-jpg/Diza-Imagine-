@@ -23,7 +23,7 @@ jobs:
             "The fox looks around, then trots deeper into the forest",
             handle_file(img),
             None,
-            "960x544 · 16:9 fast",
+            "544x544 · 1:1 fast",
             10,
             4,
             42,
