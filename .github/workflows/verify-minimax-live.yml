@@ -2,7 +2,7 @@ name: Verify MiniMax Live Web E2E
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch:\n  pull_request:\n    branches: [main]
 jobs:
   browser-e2e:
     runs-on: ubuntu-latest
