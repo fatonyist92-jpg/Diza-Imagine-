@@ -6,53 +6,17 @@
 </style></head><body><main><div class="brand">DIZA IMAGINE <span class="pill">HUNYUAN 1.5 · STEP-DISTILLED · 5s</span></div><div class="panel">
 <label class="drop" id="drop"><span id="hint"><b>Upload image</b><br><span class="muted">JPG / PNG / WEBP</span></span><img id="preview" hidden></label><input id="file" type="file" accept="image/*" hidden>
 <textarea id="prompt" placeholder="Describe the motion..."></textarea>
-<input id="token" type="password" autocomplete="off" placeholder="HF write token (dipakai lokal di browser)">
-<div class="row"><span class="muted">Token hanya disimpan di session browser ini.</span><a class="link" target="_blank" rel="noopener" href="https://huggingface.co/settings/tokens">HF token ↗</a></div>
-<div class="cfg"><b>BUILD 5S-ZG-v1</b> · 121 frames · 24 fps · 4 steps · raw prompt · ZeroGPU</div>
-<button class="secondary" id="setup">Setup / check free 5s backend</button>
-<div class="status" id="backend">Backend belum diset.</div>
+<input id="backendUrl" type="password" autocomplete="off" placeholder="Kaggle backend URL">
+<div class="row"><span class="muted">Backend Kaggle aktif.</span></div>
+<div class="cfg"><b>BUILD KAGGLE-v7</b> · 121 frames · 24 fps · raw prompt</div>
+<div class="status" id="backend">Backend: https://719dab1875f3bdea17.gradio.live</div>
 <button id="go">Generate real 5s video</button><div class="progress" id="progress"><i id="bar"></i></div><div class="status" id="status"></div><div class="result" id="result"></div>
 </div></main><script type="module">
 import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
-const BUILD="KAGGLE-5S-v1", TARGET_FRAMES=121;
-const file=document.querySelector('#file'),drop=document.querySelector('#drop'),preview=document.querySelector('#preview'),hint=document.querySelector('#hint'),go=document.querySelector('#go'),backendUrl=document.querySelector('#backendUrl'),status=document.querySelector('#status'),backendEl=document.querySelector('#backend'),result=document.querySelector('#result'),progress=document.querySelector('#progress'),bar=document.querySelector('#bar');
-backendUrl.value=localStorage.getItem('diza_kaggle_backend')||'';
+const BUILD="KAGGLE-v7",TARGET_FRAMES=121,DEFAULT_BACKEND="https://719dab1875f3bdea17.gradio.live";
+const file=document.querySelector('#file'),drop=document.querySelector('#drop'),preview=document.querySelector('#preview'),hint=document.querySelector('#hint'),go=document.querySelector('#go'),status=document.querySelector('#status'),backendEl=document.querySelector('#backend'),result=document.querySelector('#result'),progress=document.querySelector('#progress'),bar=document.querySelector('#bar'),backendUrl=document.querySelector('#backendUrl');
+backendUrl.value=sessionStorage.getItem('diza_kaggle_backend')||DEFAULT_BACKEND;
 const prog=(n,t)=>{progress.classList.add('on');bar.style.width=Math.max(0,Math.min(100,n))+'%';status.textContent=n+'% · '+t};
-drop.onclick=()=>file.click();
-file.onchange=()=>{if(!file.files[0])return;preview.src=URL.createObjectURL(file.files[0]);preview.hidden=false;hint.hidden=true};
-backendUrl.onchange=()=>{let u=backendUrl.value.trim().replace(/\/$/,'');localStorage.setItem('diza_kaggle_backend',u);backendEl.textContent=u?'Backend tersimpan: '+u:'Masukkan URL backend Kaggle.'};
-
-go.onclick=async()=>{
- const p=document.querySelector('#prompt').value.trim();
- let u=backendUrl.value.trim().replace(/\/$/,'');
- if(!file.files[0]||!p){status.textContent='Upload image dan isi prompt dulu.';return}
- if(!u){status.textContent='Masukkan Kaggle backend URL dulu.';return}
- localStorage.setItem('diza_kaggle_backend',u);
- go.disabled=true;result.innerHTML='';prog(5,BUILD+' · connecting Kaggle');
- try{
-   const app=await Client.connect(u);
-   backendEl.innerHTML='<span class="ok">Kaggle backend connected ✓</span>';
-   prog(15,'Uploading image + raw prompt');
-   const job=app.submit('/generate',{input_image:handle_file(file.files[0]),prompt:p,seed:-1});
-   let data=null;
-   for await(const msg of job){
-     if(msg.type==='status'){
-       const q=msg.position!=null?' · queue '+(msg.position+1):'';
-       prog(35,'Hunyuan generating 121 frames'+q);
-     } else if(msg.type==='data'){data=msg.data;prog(92,'Receiving MP4…');break}
-   }
-   if(!data) throw Error('Backend returned no result');
-   let v=null,meta='';
-   const walk=o=>{if(typeof o==='string'){if(/\.(mp4|webm)(\?|$)/i.test(o)&&!v)v=o;else if(/frames|duration|seed/i.test(o))meta=o}else if(o&&typeof o==='object'){if(o.url&&/\.(mp4|webm)(\?|$)/i.test(o.url)&&!v)v=o.url;Object.values(o).forEach(walk)}};walk(data);
-   if(!v)throw Error('No MP4 URL returned');
-   result.innerHTML='<video id="vid" controls autoplay loop playsinline src="'+v+'"></video><div class="row"><span class="muted" id="meta">'+(meta||'Checking duration…')+'</span><a class="pill" style="color:#fff;text-decoration:none" target="_blank" href="'+v+'">Open MP4</a></div>';
-   const vid=document.querySelector('#vid'),m=document.querySelector('#meta');
-   await new Promise((res,rej)=>{vid.onloadedmetadata=res;vid.onerror=()=>rej(Error('Video metadata failed'))});
-   const d=vid.duration;m.textContent=(meta?meta+' · ':'')+d.toFixed(2)+'s actual';
-   if(!Number.isFinite(d)||d<4.5)throw Error('WRONG_DURATION '+d.toFixed(2)+'s');
-   prog(100,'REAL '+d.toFixed(2)+' detik ✓');
- }catch(e){status.textContent='Generation failed: '+String(e.message||e).slice(0,520)}
- finally{go.disabled=false}
-};
-if(backendUrl.value)backendEl.textContent='Backend tersimpan: '+backendUrl.value;
+drop.onclick=()=>file.click();file.onchange=()=>{if(!file.files[0])return;preview.src=URL.createObjectURL(file.files[0]);preview.hidden=false;hint.hidden=true};
+go.onclick=async()=>{const p=document.querySelector('#prompt').value.trim(),backend=(backendUrl.value.trim()||DEFAULT_BACKEND).replace(/\/$/,'');if(!file.files[0]||!p){status.textContent='Upload image dan isi prompt dulu.';return}sessionStorage.setItem('diza_kaggle_backend',backend);backendEl.textContent='Backend: '+backend;go.disabled=true;result.innerHTML='';prog(5,BUILD+' · connecting Kaggle');try{const app=await Client.connect(backend);prog(18,'Sending raw prompt · 121 frames');const job=app.submit('/generate',{input_image:handle_file(file.files[0]),prompt:p,seed:-1});let data=null;for await(const msg of job){if(msg.type==='status'){const q=msg.position!=null?' · queue '+(msg.position+1):'';prog(35,'Kaggle Hunyuan generating'+q)}else if(msg.type==='data'){data=msg.data;prog(92,'Encoding MP4…');break}}if(!data)throw Error('Backend returned no result');let v=null;const walk=o=>{if(v)return;if(typeof o==='string'&&/\.(mp4|webm)(\?|$)/i.test(o))v=o;else if(o&&typeof o==='object'){if(o.url&&/\.(mp4|webm)(\?|$)/i.test(o.url))v=o.url;else Object.values(o).forEach(walk)}};walk(data);if(!v)throw Error('No MP4 URL returned');result.innerHTML='<video id="vid" controls autoplay loop playsinline src="'+v+'"></video><div class="row"><span class="muted" id="meta">Checking duration…</span><a class="pill" style="color:#fff;text-decoration:none" target="_blank" href="'+v+'">Open MP4</a></div>';const vid=document.querySelector('#vid'),meta=document.querySelector('#meta');await new Promise((resolve,reject)=>{vid.onloadedmetadata=resolve;vid.onerror=()=>reject(Error('Video metadata failed'))});const d=vid.duration;meta.textContent=TARGET_FRAMES+' frames · '+d.toFixed(2)+'s actual';if(!Number.isFinite(d)||d<4.5)throw Error('WRONG_DURATION '+d.toFixed(2)+'s');prog(100,'REAL '+d.toFixed(2)+' detik ✓')}catch(e){status.textContent='Generation failed: '+String(e.message||e).slice(0,520)}finally{go.disabled=false}};
 </script></body></html>
