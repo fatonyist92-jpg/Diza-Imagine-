@@ -14,7 +14,7 @@ result=client.predict(
     PROMPT,
     handle_file(IMAGE_URL),
     None,
-    "960x544 · 16:9 fast",
+    "544x544 · 1:1 fast",
     10,
     4,
     42,
