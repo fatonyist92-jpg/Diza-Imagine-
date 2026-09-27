@@ -18,5 +18,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -q playwright
       - run: playwright install --with-deps chromium
-      - name: Generate video through live web
+      - name: Start exact web build
+        run: python -m http.server 8765 >/tmp/diza-http.log 2>&1 &
+      - name: Generate video through browser web
         run: python minimax_web/e2e_live.py
