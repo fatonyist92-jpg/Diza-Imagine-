@@ -18,7 +18,7 @@ result=client.predict(
     steps=4,
     seed=42,
     upsample=False,
-    api_name="/generate",
+    api_name="generate",
 )
 print("RAW RESULT:", result, flush=True)
 video=result[0]
