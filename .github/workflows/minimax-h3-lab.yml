@@ -10,42 +10,40 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install -q gradio_client requests
-      - name: Generate 10s I2V
+      - name: Generate H3 and make 10s MP4
         run: |
           python - <<'PY'
           import requests, shutil, os, time
           from gradio_client import Client, handle_file
           img='first.png'
           u='https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png'
-          r=requests.get(u,timeout=60); r.raise_for_status(); open(img,'wb').write(r.content)
+          r=requests.get(u,timeout=60)
+          r.raise_for_status()
+          open(img,'wb').write(r.content)
           c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
-          last=None
           for attempt in range(1,13):
               try:
                   print("ATTEMPT",attempt,flush=True)
                   res=c.predict(
-                    "The fox looks around, then trots deeper into the forest",
-                    handle_file(img),
-                    None,
-                    "544x544 · 1:1 fast",
-                    5,
-                    1,
-                    42,
-                    False,
-                    "larry",
-                    api_name="/output_video"
+                      "The fox looks around, then trots deeper into the forest",
+                      handle_file(img), None, "544x544 · 1:1 fast",
+                      5, 1, 42, False, "larry",
+                      api_name="/output_video"
                   )
                   break
               except Exception as e:
-                  last=e
                   print("RETRY_ERROR",repr(e),flush=True)
                   if attempt==12: raise
                   time.sleep(60)
           print("RESULT",res)
           p=res[0]
-          if isinstance(p,dict): p=p.get('path') or p.get('video') or p.get('url')
-          if not p or not os.path.exists(p): raise RuntimeError(f"No MP4 file: {p}")
-          shutil.copyfile(p,'clip.mp4')\n          os.system("ffmpeg -y -stream_loop 1 -i clip.mp4 -t 10 -c copy minimax-h3-10s.mp4 >/dev/null 2>&1")
+          if isinstance(p,dict):
+              p=p.get('path') or p.get('video') or p.get('url')
+          if not p or not os.path.exists(p):
+              raise RuntimeError(f"No MP4 file: {p}")
+          shutil.copyfile(p,'clip.mp4')
+          rc=os.system("ffmpeg -y -stream_loop 1 -i clip.mp4 -t 10 -c copy minimax-h3-10s.mp4 >/dev/null 2>&1")
+          if rc: raise RuntimeError("ffmpeg failed")
           size=os.path.getsize('minimax-h3-10s.mp4')
           print("MP4_BYTES",size)
           if size < 10000: raise RuntimeError("MP4 too small")
