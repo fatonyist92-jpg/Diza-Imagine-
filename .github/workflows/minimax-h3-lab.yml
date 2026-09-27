@@ -3,19 +3,45 @@ on:
   push:
     branches: [minimax-h3-lab]
 jobs:
-  inspect:
+  generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install -q gradio_client requests
-      - run: |
+      - name: Generate 10s I2V
+        run: |
           python - <<'PY'
-          import requests
-          from gradio_client import Client
-          base='https://minimaxai-minimax-h3-turbo-lora.hf.space'
-          for p in ['/gradio_api/info','/config']:
-              r=requests.get(base+p,timeout=30); print(p,r.status_code,r.text[:20000])
+          import requests, shutil, os
+          from gradio_client import Client, handle_file
+          img='first.png'
+          u='https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png'
+          r=requests.get(u,timeout=60); r.raise_for_status(); open(img,'wb').write(r.content)
           c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
-          c.view_api()
+          res=c.predict(
+            "The fox looks around, then trots deeper into the forest",
+            handle_file(img),
+            None,
+            "960x544 · 16:9 fast",
+            10,
+            4,
+            42,
+            False,
+            "larry",
+            api_name="/output_video"
+          )
+          print("RESULT",res)
+          p=res[0]
+          if isinstance(p,dict): p=p.get('path') or p.get('video') or p.get('url')
+          if not p or not os.path.exists(p): raise RuntimeError(f"No MP4 file: {p}")
+          shutil.copyfile(p,'minimax-h3-10s.mp4')
+          size=os.path.getsize('minimax-h3-10s.mp4')
+          print("MP4_BYTES",size)
+          if size < 10000: raise RuntimeError("MP4 too small")
           PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minimax-h3-10s-mp4
+          path: minimax-h3-10s.mp4
+          if-no-files-found: error
