@@ -1,4 +1,6 @@
 from gradio_client import Client, handle_file
+from urllib.request import urlretrieve
+from PIL import Image
 import os, shutil
 
 SPACE="MiniMaxAI/MiniMax-H3-Turbo-Lora"
@@ -6,13 +8,22 @@ PROMPT="The fox looks around, then trots deeper into the forest"
 IMAGE_URL="https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png"
 OUT="minimax_h3_10s.mp4"
 
+src="/tmp/first.png"
+square="/tmp/first_square.png"
+urlretrieve(IMAGE_URL, src)
+img=Image.open(src).convert("RGB")
+side=min(img.width,img.height)
+left=(img.width-side)//2
+top=(img.height-side)//2
+img.crop((left,top,left+side,top+side)).resize((544,544)).save(square)
+
 print("Connecting:", SPACE, flush=True)
 client=Client(SPACE, verbose=True)
-print("Submitting official workflow endpoint /output_video: 10s, 4 steps, larry Turbo LoRA", flush=True)
+print("Submitting /output_video: 10s, 4 steps, 544x544, larry Turbo LoRA", flush=True)
 
 result=client.predict(
     PROMPT,
-    handle_file(IMAGE_URL),
+    handle_file(square),
     None,
     "544x544 · 1:1 fast",
     10,
