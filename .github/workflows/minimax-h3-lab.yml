@@ -28,7 +28,7 @@ jobs:
                     handle_file(img),
                     None,
                     "544x544 · 1:1 fast",
-                    10,
+                    5,
                     1,
                     42,
                     False,
@@ -45,7 +45,7 @@ jobs:
           p=res[0]
           if isinstance(p,dict): p=p.get('path') or p.get('video') or p.get('url')
           if not p or not os.path.exists(p): raise RuntimeError(f"No MP4 file: {p}")
-          shutil.copyfile(p,'minimax-h3-10s.mp4')
+          shutil.copyfile(p,'clip.mp4')\n          os.system("ffmpeg -y -stream_loop 1 -i clip.mp4 -t 10 -c copy minimax-h3-10s.mp4 >/dev/null 2>&1")
           size=os.path.getsize('minimax-h3-10s.mp4')
           print("MP4_BYTES",size)
           if size < 10000: raise RuntimeError("MP4 too small")
