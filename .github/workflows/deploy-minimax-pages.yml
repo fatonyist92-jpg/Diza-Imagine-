@@ -1,7 +1,11 @@
 name: Deploy MiniMax H3 Live Web
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 permissions:
   contents: read
