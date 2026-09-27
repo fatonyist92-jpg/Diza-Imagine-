@@ -13,24 +13,34 @@ jobs:
       - name: Generate 10s I2V
         run: |
           python - <<'PY'
-          import requests, shutil, os
+          import requests, shutil, os, time
           from gradio_client import Client, handle_file
           img='first.png'
           u='https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png'
           r=requests.get(u,timeout=60); r.raise_for_status(); open(img,'wb').write(r.content)
           c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
-          res=c.predict(
-            "The fox looks around, then trots deeper into the forest",
-            handle_file(img),
-            None,
-            "544x544 · 1:1 fast",
-            10,
-            1,
-            42,
-            False,
-            "larry",
-            api_name="/output_video"
-          )
+          last=None
+          for attempt in range(1,13):
+              try:
+                  print("ATTEMPT",attempt,flush=True)
+                  res=c.predict(
+                    "The fox looks around, then trots deeper into the forest",
+                    handle_file(img),
+                    None,
+                    "544x544 · 1:1 fast",
+                    10,
+                    1,
+                    42,
+                    False,
+                    "larry",
+                    api_name="/output_video"
+                  )
+                  break
+              except Exception as e:
+                  last=e
+                  print("RETRY_ERROR",repr(e),flush=True)
+                  if attempt==12: raise
+                  time.sleep(60)
           print("RESULT",res)
           p=res[0]
           if isinstance(p,dict): p=p.get('path') or p.get('video') or p.get('url')
