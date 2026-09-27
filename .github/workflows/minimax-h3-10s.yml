@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install client
-        run: pip install -q "gradio_client>=1.5"
+        run: pip install -q "gradio_client>=1.5" pillow
       - name: Generate 10-second MP4
         run: python minimax_lab/run.py
       - name: Verify MP4
