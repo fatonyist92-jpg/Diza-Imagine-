@@ -45,3 +45,5 @@ jobs:
           name: minimax-h3-10s-mp4
           path: minimax-h3-10s.mp4
           if-no-files-found: error
+
+# trigger
