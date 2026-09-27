@@ -8,20 +8,29 @@
 <textarea id="prompt" placeholder="Describe the motion..."></textarea>
 <input id="token" type="password" autocomplete="off" placeholder="HF token (gratis, untuk quota ZeroGPU)">
 <div class="row"><span class="muted">Token hanya dipakai browser ini untuk request ke Hugging Face.</span><a class="link" target="_blank" rel="noopener" href="https://huggingface.co/settings/tokens">Buat token HF ↗</a></div>
-<div class="cfg"><b>BUILD 121F-v4</b> · 480p · 121 frames · 24 fps · 4 steps · prompt rewrite OFF</div>
+<div class="cfg"><b>BUILD 121F-v5</b> · 480p · 121 frames · 24 fps · 4 steps · prompt rewrite OFF</div>
 <button id="go">Generate 5s video</button><div class="progress" id="progress"><i id="bar"></i></div><div class="status" id="status"></div><div class="result" id="result"></div>
 </div></main><script type="module">
 import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
-const LENGTH=121, STEPS=4, SHIFT=5, GUIDANCE=1, BUILD="121F-v4";
+const LENGTH=121, STEPS=4, SHIFT=5, GUIDANCE=1, BUILD="121F-v5";
 const file=document.querySelector('#file'),drop=document.querySelector('#drop'),preview=document.querySelector('#preview'),hint=document.querySelector('#hint'),go=document.querySelector('#go'),token=document.querySelector('#token'),status=document.querySelector('#status'),result=document.querySelector('#result'),progress=document.querySelector('#progress'),bar=document.querySelector('#bar');
 token.value=sessionStorage.getItem('hf_token')||'';
 const prog=(n,t)=>{progress.classList.add('on');bar.style.width=Math.max(0,Math.min(100,n))+'%';status.textContent=n+'% · '+t};
 drop.onclick=()=>file.click();file.onchange=()=>{if(!file.files[0])return;preview.src=URL.createObjectURL(file.files[0]);preview.hidden=false;hint.hidden=true};
 go.onclick=async()=>{const p=document.querySelector('#prompt').value.trim(),hf=token.value.trim();if(!file.files[0]||!p){status.textContent='Upload image dan isi prompt dulu.';return}if(!hf){status.textContent='Masukkan HF token gratis dulu.';return}sessionStorage.setItem('hf_token',hf);go.disabled=true;result.innerHTML='';prog(5,BUILD+' · preparing 121 frames');
 try{
-  const app=await Client.connect("multimodalart/Hunyuan-Video-1-5",{token:hf});
+  const app=await Client.connect("multimodalart/Hunyuan-Video-1-5",{token:hf,events:["data","status"]});
   prog(18,'Authenticated ZeroGPU · sending LENGTH='+LENGTH);
-  const job=app.submit(0,[handle_file(file.files[0]),p,LENGTH,STEPS,SHIFT,-1,GUIDANCE,false]);
+  const job=app.submit("/generate",{
+    input_image:handle_file(file.files[0]),
+    prompt:p,
+    length:LENGTH,
+    steps:STEPS,
+    shift:SHIFT,
+    seed:-1,
+    guidance:GUIDANCE,
+    do_rewrite:false
+  });
   let r=null;
   for await(const msg of job){
     if(msg.type==='status'){const q=msg.position!=null?' · queue '+(msg.position+1):'';prog(38,'Generating '+LENGTH+' frames'+q)}
