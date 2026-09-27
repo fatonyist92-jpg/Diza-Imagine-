@@ -8,12 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: pip install -q gradio_client
-      - name: Probe exact step-distilled demo
+      - name: Probe custom Hunyuan demo spaces
         run: |
           python - <<'PY'
           from gradio_client import Client
-          s="Guns6996/Guns_AI_Studio"
-          print("===== ",s," =====")
-          c=Client(s, verbose=True)
-          print(c.view_api(return_format="dict"))
+          spaces=[
+            "rijasaivideo/Hunyuan-Video-1-5",
+            "VirtualOasis/CineGen",
+            "mimot/Image-Edit-Full-Wan",
+            "gagndeep/HF-Worldplay",
+          ]
+          for s in spaces:
+              print("\n===== "+s+" =====")
+              try:
+                  c=Client(s, verbose=False)
+                  print(c.view_api(return_format="dict"))
+              except Exception as e:
+                  print("ERROR",repr(e))
           PY
