@@ -1,0 +1,28 @@
+name: Probe free Hunyuan spaces
+on:
+  push:
+    paths:
+      - ".github/workflows/probe-hunyuan-spaces.yml"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gradio client
+        run: pip install -q gradio_client
+      - name: Probe candidate Spaces
+        run: |
+          python - <<'PY'
+          from gradio_client import Client
+          spaces=[
+            "USF00/Wan2GP_Demo",
+            "Egnalkram/Wan2GP",
+            "blackspears2026/Hunyuan-Video-1-5",
+          ]
+          for s in spaces:
+              print("\n===== ",s," =====")
+              try:
+                  c=Client(s, verbose=False)
+                  print(c.view_api(return_format="dict"))
+              except Exception as e:
+                  print("ERROR",repr(e))
+          PY
