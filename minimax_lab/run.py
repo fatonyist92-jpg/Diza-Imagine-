@@ -8,7 +8,7 @@ OUT="minimax_h3_10s.mp4"
 
 print("Connecting:", SPACE, flush=True)
 client=Client(SPACE, verbose=True)
-print("Submitting 10s I2V...", flush=True)
+print("API SPEC:", client.view_api(return_format="dict"), flush=True)\nprint("Submitting 10s I2V...", flush=True)
 result=client.predict(
     prompt=PROMPT,
     image_path=handle_file(IMAGE_URL),
@@ -18,7 +18,7 @@ result=client.predict(
     steps=4,
     seed=42,
     upsample=False,
-    api_name="generate",
+    api_name="/generate",
 )
 print("RAW RESULT:", result, flush=True)
 video=result[0]
