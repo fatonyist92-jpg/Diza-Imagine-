@@ -25,7 +25,7 @@ jobs:
             None,
             "544x544 · 1:1 fast",
             10,
-            2,
+            1,
             42,
             False,
             "larry",
