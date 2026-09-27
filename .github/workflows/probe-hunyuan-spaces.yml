@@ -7,40 +7,13 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Install gradio client
-        run: pip install -q gradio_client
-      - name: Probe candidate Spaces
+      - run: pip install -q gradio_client
+      - name: Probe exact step-distilled demo
         run: |
           python - <<'PY'
           from gradio_client import Client
-          spaces=[
-            "WarFreak86/tencent-HunyuanVideo-1.5",
-            "albertin0/tencent-HunyuanVideo-1.5-v2",
-            "Lake-Phrost/tencent-HunyuanVideo-1.5",
-            "ChaosWithme/tencent-HunyuanVideo-1.5",
-            "hiadarf/tencent-HunyuanVideo-1.5",
-            "rk000000007/tencent-HunyuanVideo-1.5",
-            "CranberryKnight/tencent-HunyuanVideo-1.5",
-            "LUGUOZZZ/tencent-HunyuanVideo-1.5",
-            "toleutajdani/tencent-HunyuanVideo-1.5",
-            "Laurexp/tencent-HunyuanVideo-1.5",
-            "Mezzolee/tencent-HunyuanVideo-1.5",
-            "mayankrawat98/tencent-HunyuanVideo-1.5",
-            "sandy018/tencent-HunyuanVideo-1.5",
-            "trung26042000/tencent-HunyuanVideo-1.5",
-            "Johnmemos-42/tencent-HunyuanVideo-1.5",
-            "developeasusual/tencent-HunyuanVideo-1.5",
-            "mcfure/tencent-HunyuanVideo-1.5",
-            "alphapex/tencent-HunyuanVideo-1.5",
-            "Nar7ender/tencent-HunyuanVideo-1.5",
-            "Kkenpachi/tencent-HunyuanVideo-1.5"
-          ]
-          for s in spaces:
-              print("\n===== ",s," =====")
-              try:
-                  c=Client(s, verbose=False)
-                  api=c.view_api(return_format="dict")
-                  print(api)
-              except Exception as e:
-                  print("ERROR",repr(e))
+          s="Guns6996/Guns_AI_Studio"
+          print("===== ",s," =====")
+          c=Client(s, verbose=True)
+          print(c.view_api(return_format="dict"))
           PY
