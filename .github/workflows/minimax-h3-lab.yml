@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - run: pip install -q gradio_client requests
+      - run: pip install -q gradio_client requests\n      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Generate H3 and make 10s MP4
         run: |
           python - <<'PY'
@@ -42,7 +42,7 @@ jobs:
           if not p or not os.path.exists(p):
               raise RuntimeError(f"No MP4 file: {p}")
           shutil.copyfile(p,'clip.mp4')
-          rc=os.system("ffmpeg -y -stream_loop 1 -i clip.mp4 -t 10 -c copy minimax-h3-10s.mp4 >/dev/null 2>&1")
+          rc=os.system("ffmpeg -y -stream_loop 1 -i clip.mp4 -t 10 -c:v libx264 -preset ultrafast -c:a aac minimax-h3-10s.mp4 >/dev/null 2>&1")
           if rc: raise RuntimeError("ffmpeg failed")
           size=os.path.getsize('minimax-h3-10s.mp4')
           print("MP4_BYTES",size)
