@@ -29,7 +29,7 @@ def generate():
     td=tempfile.mkdtemp(prefix="hunyuan_")
     inp=os.path.join(td,"input.png"); request.files["image"].save(inp)
     try:
-        client=Client("https://12e10a8b58255dc9a9.gradio.live")
+        client=Client("https://d594570a7d83f13191.gradio.live")
         result=client.predict(handle_file(inp), prompt, -1, api_name="/generate")
         def path(x):
             if isinstance(x,str) and os.path.exists(x): return x
