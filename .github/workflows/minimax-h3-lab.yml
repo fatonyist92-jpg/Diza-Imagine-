@@ -21,20 +21,20 @@ jobs:
           r.raise_for_status()
           open(img,'wb').write(r.content)
           c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
-          for attempt in range(1,13):
+          for attempt in range(1,3):
               try:
                   print("ATTEMPT",attempt,flush=True)
                   res=c.predict(
                       "The fox looks around, then trots deeper into the forest",
                       handle_file(img), None, "544x544 · 1:1 fast",
-                      5, 1, 42, False, "larry",
+                      5, 2, 42, False, "larry",
                       api_name="/output_video"
                   )
                   break
               except Exception as e:
                   print("RETRY_ERROR",repr(e),flush=True)
-                  if attempt==12: raise
-                  time.sleep(60)
+                  if attempt==2: raise
+                  time.sleep(90)
           print("RESULT",res)
           p=res[0]
           if isinstance(p,dict):
