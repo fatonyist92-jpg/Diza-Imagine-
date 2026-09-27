@@ -1,5 +1,5 @@
 from gradio_client import Client, handle_file
-import os, shutil, sys
+import os, shutil
 
 SPACE="MiniMaxAI/MiniMax-H3-Turbo-Lora"
 PROMPT="The fox looks around, then trots deeper into the forest"
@@ -8,7 +8,9 @@ OUT="minimax_h3_10s.mp4"
 
 print("Connecting:", SPACE, flush=True)
 client=Client(SPACE, verbose=True)
-print("API SPEC:", client.view_api(return_format="dict"), flush=True)\nprint("Submitting 10s I2V...", flush=True)
+print("API SPEC:", client.view_api(return_format="dict"), flush=True)
+print("Submitting 10s I2V...", flush=True)
+
 result=client.predict(
     prompt=PROMPT,
     image_path=handle_file(IMAGE_URL),
@@ -20,11 +22,13 @@ result=client.predict(
     upsample=False,
     api_name="/generate",
 )
+
 print("RAW RESULT:", result, flush=True)
 video=result[0]
-path=getattr(video, "path", None) or (video if isinstance(video,str) else None)
+path=getattr(video, "path", None) or (video if isinstance(video, str) else None)
 if not path or not os.path.exists(path):
     raise RuntimeError(f"No local MP4 returned: {video!r}")
+
 shutil.copyfile(path, OUT)
 size=os.path.getsize(OUT)
 print("MP4:", OUT, "bytes=", size, flush=True)
