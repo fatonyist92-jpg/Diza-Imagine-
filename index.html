@@ -14,130 +14,45 @@
 <button id="go">Generate real 5s video</button><div class="progress" id="progress"><i id="bar"></i></div><div class="status" id="status"></div><div class="result" id="result"></div>
 </div></main><script type="module">
 import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
-import { createRepo, uploadFiles } from "https://cdn.jsdelivr.net/npm/@huggingface/hub/+esm";
-
-const BUILD="5S-ZG-v1", TARGET_FRAMES=121, TARGET_FPS=24;
-const file=document.querySelector('#file'),drop=document.querySelector('#drop'),preview=document.querySelector('#preview'),hint=document.querySelector('#hint'),go=document.querySelector('#go'),setup=document.querySelector('#setup'),token=document.querySelector('#token'),status=document.querySelector('#status'),backendEl=document.querySelector('#backend'),result=document.querySelector('#result'),progress=document.querySelector('#progress'),bar=document.querySelector('#bar');
-token.value=sessionStorage.getItem('hf_token')||'';
-let SPACE_ID=sessionStorage.getItem('diza_hf_space')||'';
+const BUILD="KAGGLE-5S-v1", TARGET_FRAMES=121;
+const file=document.querySelector('#file'),drop=document.querySelector('#drop'),preview=document.querySelector('#preview'),hint=document.querySelector('#hint'),go=document.querySelector('#go'),backendUrl=document.querySelector('#backendUrl'),status=document.querySelector('#status'),backendEl=document.querySelector('#backend'),result=document.querySelector('#result'),progress=document.querySelector('#progress'),bar=document.querySelector('#bar');
+backendUrl.value=localStorage.getItem('diza_kaggle_backend')||'';
 const prog=(n,t)=>{progress.classList.add('on');bar.style.width=Math.max(0,Math.min(100,n))+'%';status.textContent=n+'% · '+t};
 drop.onclick=()=>file.click();
 file.onchange=()=>{if(!file.files[0])return;preview.src=URL.createObjectURL(file.files[0]);preview.hidden=false;hint.hidden=true};
-
-async function hfFetch(path,hf,opts={}){
-  const headers={...(opts.headers||{}),Authorization:'Bearer '+hf};
-  return fetch('https://huggingface.co'+path,{...opts,headers});
-}
-async function getIdentity(hf){
-  const r=await hfFetch('/api/whoami-v2',hf);
-  if(!r.ok) throw Error('HF token invalid: '+(await r.text()).slice(0,180));
-  return r.json();
-}
-async function getRuntime(hf,spaceId){
-  const r=await hfFetch('/api/spaces/'+spaceId+'/runtime',hf);
-  if(!r.ok) return null;
-  return r.json();
-}
-async function setBackendState(hf,spaceId){
-  const rt=await getRuntime(hf,spaceId);
-  if(!rt){backendEl.textContent='Backend repo ada, runtime belum tersedia.';return false}
-  const stage=rt.stage||'UNKNOWN', hw=rt.hardware?.current||rt.hardware?.requested||'unknown';
-  backendEl.innerHTML='Backend: <b>'+spaceId+'</b><br>Stage: '+stage+' · hardware: '+hw;
-  return stage==='RUNNING' && hw==='zero-a10g';
-}
-async function sourceBlob(path){
-  const url='https://raw.githubusercontent.com/fatonyist92-jpg/Diza-Imagine-/main/hf_space/'+path+'?v='+Date.now();
-  const r=await fetch(url,{cache:'no-store'});
-  if(!r.ok) throw Error('Gagal ambil '+path+' dari source repo');
-  return new Blob([await r.text()],{type:'text/plain'});
-}
-
-setup.onclick=async()=>{
-  const hf=token.value.trim();
-  if(!hf){backendEl.textContent='Masukkan HF write token dulu.';return}
-  sessionStorage.setItem('hf_token',hf);
-  setup.disabled=true; go.disabled=true; backendEl.textContent='Checking Hugging Face account…';
-  try{
-    const me=await getIdentity(hf);
-    const username=me.name||me.user||me.username;
-    if(!username) throw Error('Username HF tidak terbaca');
-    const spaceId=username+'/diza-hunyuan-5s';
-    const repo={type:'space',name:spaceId};
-    backendEl.textContent='Preparing '+spaceId+'…';
-    const [readme,app,req]=await Promise.all([sourceBlob('README.md'),sourceBlob('app.py'),sourceBlob('requirements.txt')]);
-    const files=[{path:'README.md',content:readme},{path:'app.py',content:app},{path:'requirements.txt',content:req}];
-
-    let exists=false;
-    const chk=await fetch('https://huggingface.co/api/spaces/'+spaceId,{headers:{Authorization:'Bearer '+hf}});
-    exists=chk.ok;
-    if(!exists){
-      await createRepo({repo,accessToken:hf,sdk:'gradio',visibility:'public',files});
-    }else{
-      await uploadFiles({repo,accessToken:hf,files});
-    }
-
-    backendEl.textContent='Requesting free ZeroGPU…';
-    const hw=await hfFetch('/api/spaces/'+spaceId+'/hardware',hf,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({flavor:'zero-a10g'})
-    });
-    if(!hw.ok){
-      const t=(await hw.text()).slice(0,320);
-      throw Error('ZeroGPU request ditolak: '+t);
-    }
-    SPACE_ID=spaceId; sessionStorage.setItem('diza_hf_space',spaceId);
-    backendEl.innerHTML='<span class="ok">Backend dibuat ✓</span><br><b>'+spaceId+'</b><br>ZeroGPU sedang build/start. Tunggu sampai Stage RUNNING.';
-    status.textContent='Setup selesai. Tekan check lagi beberapa saat sampai RUNNING.';
-  }catch(e){
-    const m=String(e.message||e);
-    backendEl.innerHTML='<span class="warn">Setup belum selesai.</span><br>'+m.slice(0,520);
-  }finally{setup.disabled=false;go.disabled=false}
-};
+backendUrl.onchange=()=>{let u=backendUrl.value.trim().replace(/\/$/,'');localStorage.setItem('diza_kaggle_backend',u);backendEl.textContent=u?'Backend tersimpan: '+u:'Masukkan URL backend Kaggle.'};
 
 go.onclick=async()=>{
-  const p=document.querySelector('#prompt').value.trim(),hf=token.value.trim();
-  if(!file.files[0]||!p){status.textContent='Upload image dan isi prompt dulu.';return}
-  if(!hf){status.textContent='Masukkan HF token dulu.';return}
-  sessionStorage.setItem('hf_token',hf);
-  if(!SPACE_ID){
-    try{const me=await getIdentity(hf);SPACE_ID=(me.name||me.user||me.username)+'/diza-hunyuan-5s'}catch{}
-  }
-  if(!SPACE_ID){status.textContent='Setup backend dulu.';return}
-  const rt=await getRuntime(hf,SPACE_ID);
-  const hw=rt?.hardware?.current||rt?.hardware?.requested;
-  if(rt?.stage!=='RUNNING'||hw!=='zero-a10g'){
-    backendEl.textContent='Backend belum RUNNING · stage '+(rt?.stage||'unknown')+' · '+(hw||'unknown');
-    status.textContent='Tekan Setup / check sampai backend RUNNING.';
-    return;
-  }
-
-  go.disabled=true;result.innerHTML='';prog(5,BUILD+' · connecting '+SPACE_ID);
-  try{
-    const app=await Client.connect(SPACE_ID,{token:hf});
-    prog(18,'Sending raw prompt · 121 frames');
-    const job=app.submit('/generate',{input_image:handle_file(file.files[0]),prompt:p,seed:-1});
-    let data=null;
-    for await(const msg of job){
-      if(msg.type==='status'){
-        const q=msg.position!=null?' · queue '+(msg.position+1):'';
-        prog(35,'ZeroGPU generating'+q);
-      }else if(msg.type==='data'){data=msg.data;prog(92,'Encoding MP4…');break}
-    }
-    if(!data) throw Error('Backend returned no result');
-    let v=null;const walk=o=>{if(v)return;if(typeof o==='string'&&/\.(mp4|webm)(\?|$)/i.test(o))v=o;else if(o&&typeof o==='object'){if(o.url&&/\.(mp4|webm)(\?|$)/i.test(o.url))v=o.url;else Object.values(o).forEach(walk)}};walk(data);
-    if(!v)throw Error('No MP4 URL returned');
-    result.innerHTML='<video id="vid" controls autoplay loop playsinline src="'+v+'"></video><div class="row"><span class="muted" id="meta">Checking duration…</span><a class="pill" style="color:#fff;text-decoration:none" target="_blank" href="'+v+'">Open MP4</a></div>';
-    const vid=document.querySelector('#vid'),meta=document.querySelector('#meta');
-    await new Promise((resolve,reject)=>{vid.onloadedmetadata=resolve;vid.onerror=()=>reject(Error('Video metadata failed'))});
-    const d=vid.duration;
-    meta.textContent=TARGET_FRAMES+' frames · '+d.toFixed(2)+'s actual';
-    if(!Number.isFinite(d)||d<4.5) throw Error('WRONG_DURATION '+d.toFixed(2)+'s');
-    prog(100,'REAL '+d.toFixed(2)+' detik ✓');
-  }catch(e){
-    status.textContent='Generation failed: '+String(e.message||e).slice(0,520);
-  }finally{go.disabled=false}
+ const p=document.querySelector('#prompt').value.trim();
+ let u=backendUrl.value.trim().replace(/\/$/,'');
+ if(!file.files[0]||!p){status.textContent='Upload image dan isi prompt dulu.';return}
+ if(!u){status.textContent='Masukkan Kaggle backend URL dulu.';return}
+ localStorage.setItem('diza_kaggle_backend',u);
+ go.disabled=true;result.innerHTML='';prog(5,BUILD+' · connecting Kaggle');
+ try{
+   const app=await Client.connect(u);
+   backendEl.innerHTML='<span class="ok">Kaggle backend connected ✓</span>';
+   prog(15,'Uploading image + raw prompt');
+   const job=app.submit('/generate',{input_image:handle_file(file.files[0]),prompt:p,seed:-1});
+   let data=null;
+   for await(const msg of job){
+     if(msg.type==='status'){
+       const q=msg.position!=null?' · queue '+(msg.position+1):'';
+       prog(35,'Hunyuan generating 121 frames'+q);
+     } else if(msg.type==='data'){data=msg.data;prog(92,'Receiving MP4…');break}
+   }
+   if(!data) throw Error('Backend returned no result');
+   let v=null,meta='';
+   const walk=o=>{if(typeof o==='string'){if(/\.(mp4|webm)(\?|$)/i.test(o)&&!v)v=o;else if(/frames|duration|seed/i.test(o))meta=o}else if(o&&typeof o==='object'){if(o.url&&/\.(mp4|webm)(\?|$)/i.test(o.url)&&!v)v=o.url;Object.values(o).forEach(walk)}};walk(data);
+   if(!v)throw Error('No MP4 URL returned');
+   result.innerHTML='<video id="vid" controls autoplay loop playsinline src="'+v+'"></video><div class="row"><span class="muted" id="meta">'+(meta||'Checking duration…')+'</span><a class="pill" style="color:#fff;text-decoration:none" target="_blank" href="'+v+'">Open MP4</a></div>';
+   const vid=document.querySelector('#vid'),m=document.querySelector('#meta');
+   await new Promise((res,rej)=>{vid.onloadedmetadata=res;vid.onerror=()=>rej(Error('Video metadata failed'))});
+   const d=vid.duration;m.textContent=(meta?meta+' · ':'')+d.toFixed(2)+'s actual';
+   if(!Number.isFinite(d)||d<4.5)throw Error('WRONG_DURATION '+d.toFixed(2)+'s');
+   prog(100,'REAL '+d.toFixed(2)+' detik ✓');
+ }catch(e){status.textContent='Generation failed: '+String(e.message||e).slice(0,520)}
+ finally{go.disabled=false}
 };
-
-(async()=>{if(SPACE_ID&&token.value.trim()){try{await setBackendState(token.value.trim(),SPACE_ID)}catch{}}})();
+if(backendUrl.value)backendEl.textContent='Backend tersimpan: '+backendUrl.value;
 </script></body></html>
