@@ -21,7 +21,7 @@ jobs:
           img='first.png'
           u='https://huggingface.co/spaces/MiniMaxAI/MiniMax-H3-Turbo-Lora/resolve/main/examples/first.png'
           r=requests.get(u,timeout=60); r.raise_for_status(); open(img,'wb').write(r.content)
-          c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")
+          c=Client("MiniMaxAI/MiniMax-H3-Turbo-Lora")\n          c.view_api()
           res=c.predict(
               prompt="The fox looks around, then trots deeper into the forest",
               image_path=handle_file(img),
@@ -31,7 +31,7 @@ jobs:
               steps=4,
               seed=42,
               upsample=False,
-              api_name="/generate"
+              fn_index=0
           )
           print("RESULT",res)
           p=res[0] if isinstance(res,(list,tuple)) else res
