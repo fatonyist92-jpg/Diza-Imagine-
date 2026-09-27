@@ -23,7 +23,6 @@ jobs:
         run: |
           test -s minimax_h3_10s.mp4
           ls -lh minimax_h3_10s.mp4
-          ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 minimax_h3_10s.mp4
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
