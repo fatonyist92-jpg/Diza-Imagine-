@@ -1,0 +1,32 @@
+name: MiniMax H3 10s I2V Lab
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [minimax-lab]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install client
+        run: pip install -q "gradio_client>=1.5"
+      - name: Generate 10-second MP4
+        run: python minimax_lab/run.py
+      - name: Verify MP4
+        run: |
+          test -s minimax_h3_10s.mp4
+          ls -lh minimax_h3_10s.mp4
+          ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 minimax_h3_10s.mp4
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimax-h3-10s-mp4
+          path: minimax_h3_10s.mp4
+          if-no-files-found: error
