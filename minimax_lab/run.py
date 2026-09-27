@@ -8,19 +8,19 @@ OUT="minimax_h3_10s.mp4"
 
 print("Connecting:", SPACE, flush=True)
 client=Client(SPACE, verbose=True)
-print("API SPEC:", client.view_api(return_format="dict"), flush=True)
-print("Submitting 10s I2V...", flush=True)
+print("Submitting official workflow endpoint /output_video: 10s, 4 steps, larry Turbo LoRA", flush=True)
 
 result=client.predict(
-    prompt=PROMPT,
-    image_path=handle_file(IMAGE_URL),
-    last_image_path=None,
-    canvas="960x544 · 16:9 fast",
-    duration=10,
-    steps=4,
-    seed=42,
-    upsample=False,
-    api_name="/generate",
+    PROMPT,
+    handle_file(IMAGE_URL),
+    None,
+    "960x544 · 16:9 fast",
+    10,
+    4,
+    42,
+    False,
+    "larry",
+    api_name="/output_video",
 )
 
 print("RAW RESULT:", result, flush=True)
@@ -31,6 +31,7 @@ if not path or not os.path.exists(path):
 
 shutil.copyfile(path, OUT)
 size=os.path.getsize(OUT)
+print("REPORT:", result[1], flush=True)
 print("MP4:", OUT, "bytes=", size, flush=True)
 if size < 10000:
     raise RuntimeError("MP4 too small")
