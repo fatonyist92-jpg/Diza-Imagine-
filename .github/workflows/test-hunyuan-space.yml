@@ -1,0 +1,27 @@
+name: Test Hunyuan Public Space
+
+on:
+  push:
+    paths:
+      - ".github/workflows/test-hunyuan-space.yml"
+  workflow_dispatch:
+
+jobs:
+  inspect-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Gradio client
+        run: python -m pip install --upgrade gradio_client
+
+      - name: Inspect Hunyuan Space API
+        run: |
+          python - <<'PY'
+          from gradio_client import Client
+          client = Client("multimodalart/Hunyuan-Video-1-5")
+          print(client.view_api(all_endpoints=True, print_info=False))
+          PY
