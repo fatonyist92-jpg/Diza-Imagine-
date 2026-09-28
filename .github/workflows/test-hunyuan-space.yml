@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  inspect-api:
+  api-smoke-test:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -15,13 +15,53 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Gradio client
-        run: python -m pip install --upgrade gradio_client
+      - name: Install test dependencies
+        run: python -m pip install "gradio_client==2.7.1" pillow imageio-ffmpeg
 
-      - name: Inspect Hunyuan Space API
+      - name: Generate small Hunyuan smoke-test video
         run: |
           python - <<'PY'
-          from gradio_client import Client
+          from PIL import Image
+          from gradio_client import Client, handle_file
+          import os
+
+          prompt = "A red ball rolls slowly from left to right."
+          Image.new("RGB", (854, 480), (32, 32, 32)).save("hunyuan_test.png")
+
           client = Client("multimodalart/Hunyuan-Video-1-5")
-          print(client.view_api(all_endpoints=True, print_info=False))
+          result = client.predict(
+              handle_file("hunyuan_test.png"),
+              prompt,
+              13,
+              2,
+              5.0,
+              12345,
+              1.0,
+              False,
+              api_name="/generate",
+          )
+
+          video = result[0]["path"] if isinstance(result[0], dict) else result[0]
+          actual_prompt = result[1]
+          print("ACTUAL_PROMPT:", actual_prompt)
+          print("VIDEO_PATH:", video)
+          assert actual_prompt == prompt, "Prompt was modified"
+          assert os.path.exists(video), "Video file missing"
+          os.replace(video, "hunyuan_smoke.mp4")
           PY
+
+      - name: Verify MP4
+        run: |
+          python - <<'PY'
+          import imageio_ffmpeg
+          n, sec = imageio_ffmpeg.count_frames_and_secs("hunyuan_smoke.mp4")
+          print(f"frames={n} duration={sec:.3f}s")
+          assert n >= 13
+          assert sec > 0
+          PY
+
+      - name: Upload smoke-test MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: hunyuan-smoke-mp4
+          path: hunyuan_smoke.mp4
