@@ -32,7 +32,7 @@ jobs:
           result = client.predict(
               handle_file("hunyuan_test.png"),
               prompt,
-              121,
+              97,
               6,
               5.0,
               12345,
@@ -56,12 +56,12 @@ jobs:
           import imageio_ffmpeg
           n, sec = imageio_ffmpeg.count_frames_and_secs("hunyuan_smoke.mp4")
           print(f"frames={n} duration={sec:.3f}s")
-          assert n >= 121
-          assert sec >= 4.5
+          assert n >= 97
+          assert sec >= 3.8
           PY
 
       - name: Upload smoke-test MP4
         uses: actions/upload-artifact@v4
         with:
-          name: hunyuan-121f-mp4
+          name: hunyuan-97f-mp4
           path: hunyuan_smoke.mp4
