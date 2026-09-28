@@ -30,7 +30,7 @@ jobs:
           prompt = "A red ball rolls slowly from left to right."
           Image.new("RGB", (854, 480), (32, 32, 32)).save("hunyuan_test.png")
 
-          client = Client("multimodalart/Hunyuan-Video-1-5", hf_token=os.environ["HF_TOKEN"])
+          client = Client("multimodalart/Hunyuan-Video-1-5", token=os.environ["HF_TOKEN"])
           result = client.predict(
               handle_file("hunyuan_test.png"),
               prompt,
